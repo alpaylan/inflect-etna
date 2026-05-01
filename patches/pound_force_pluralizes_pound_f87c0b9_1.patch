@@ -1,0 +1,12 @@
+diff --git a/inflect/__init__.py b/inflect/__init__.py
+index 3eef486..62c1133 100644
+--- a/inflect/__init__.py
++++ b/inflect/__init__.py
+@@ -1507,7 +1507,6 @@ plverb_special_s = enclose(
+ _pl_sb_postfix_adj_defn = (
+     ("general", enclose(r"(?!major|lieutenant|brigadier|adjutant|.*star)\S+")),
+     ("martial", enclose("court")),
+-    ("force", enclose("pound")),
+ )
+ 
+ pl_sb_postfix_adj: Iterable[str] = (

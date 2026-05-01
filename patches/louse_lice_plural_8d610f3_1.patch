@@ -1,0 +1,16 @@
+diff --git a/inflect/__init__.py b/inflect/__init__.py
+index 3eef486..67eb0cf 100644
+--- a/inflect/__init__.py
++++ b/inflect/__init__.py
+@@ -2831,10 +2831,7 @@ class engine:
+         if word.lowered[-5:] == "mouse":
+             return f"{word[:-5]}mice"
+         if word.lowered[-5:] == "louse":
+-            v = pl_sb_U_louse_lice_bysize.get(len(word))
+-            if v and word.lowered in v:
+-                return f"{word[:-5]}lice"
+-            return f"{word}s"
++            return f"{word[:-5]}lice"
+         if word.lowered[-5:] == "goose":
+             return f"{word[:-5]}geese"
+         if word.lowered[-5:] == "tooth":

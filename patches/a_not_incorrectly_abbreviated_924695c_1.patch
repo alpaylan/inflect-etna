@@ -1,0 +1,13 @@
+diff --git a/inflect/__init__.py b/inflect/__init__.py
+index 3eef486..39debe6 100644
+--- a/inflect/__init__.py
++++ b/inflect/__init__.py
+@@ -1856,7 +1856,7 @@ pl_adj_poss_keys = re.compile(rf"^({enclose('|'.join(pl_adj_poss))})$", re.IGNOR
+ 
+ A_abbrev = re.compile(
+     r"""
+-^(?! FJO | [HLMNS]Y.  | RY[EO] | SQU
++(?! FJO | [HLMNS]Y.  | RY[EO] | SQU
+   | ( F[LR]? | [HL] | MN? | N | RH? | S[CHKLMNPTVW]? | X(YL)?) [AEIOU])
+ [FHLMNRSX][A-Z]
+ """,

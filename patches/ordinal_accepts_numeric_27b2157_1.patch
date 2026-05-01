@@ -1,0 +1,13 @@
+diff --git a/inflect/__init__.py b/inflect/__init__.py
+index 3eef486..e109f55 100644
+--- a/inflect/__init__.py
++++ b/inflect/__init__.py
+@@ -3645,7 +3645,7 @@ class engine:
+     # NUMERICAL INFLECTIONS
+ 
+     @typechecked
+-    def ordinal(self, num: Union[Number, Word]) -> str:
++    def ordinal(self, num: Word) -> str:
+         """
+         Return the ordinal of num.
+ 

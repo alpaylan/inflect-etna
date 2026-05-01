@@ -1,0 +1,218 @@
+name = "inflect"
+description = "Pure-Python English-language inflection (jaraco/inflect): plurals, ordinals, indefinite articles, number-to-word conversion. Bug fixes mined from upstream history; modern HEAD is the base, each patch reverse-applies a fix to install the original bug."
+language = "python"
+crate = "inflect"
+base_commit = "262a247d2d99a47a520cdb2d46adb90df88b4326"
+
+# ---------------------------------------------------------------------------
+# Variant: plural_apostrophe_no_crash_498619b_1
+# ---------------------------------------------------------------------------
+[[tasks]]
+mutations = ["plural_apostrophe_no_crash_498619b_1"]
+
+[tasks.source]
+repo = "https://github.com/jaraco/inflect"
+commits = ["498619bf7a658d127c8be1e7e7e465b69dcf6800"]
+commit_subjects = ["Handle a single apostrophe more gracefully"]
+prs = [218]
+summary = "ENDS_WITH_APOSTROPHE_S used `^(.*)'s?$` which lets the empty stem case match for the bare-apostrophe input \"'\". The downstream typeguarded plural_noun() then crashes on the empty Word. The fix tightens the regex to `^(.+)'s?$` so the apostrophe-only string falls through and is returned unchanged."
+
+[tasks.injection]
+kind = "patch"
+files = ["inflect/__init__.py"]
+locations = [{ file = "inflect/__init__.py", line = 1989, symbol = "ENDS_WITH_APOSTROPHE_S" }]
+patch = "patches/plural_apostrophe_no_crash_498619b_1.patch"
+
+[tasks.bug]
+short_name = "plural_apostrophe_no_crash"
+invariant = "engine().plural(s) returns a string for any non-empty str s; in particular, plural(\"'\") must not raise."
+how_triggered = "Reverse-applying the patch loosens ENDS_WITH_APOSTROPHE_S back to `^(.*)'s?$`. plural(\"'\") then matches with an empty stem; the typeguard-checked plural_noun() rejects the empty Word and raises TypeCheckError."
+
+[[tasks.tasks]]
+property = "PluralApostropheNoCrash"
+witnesses = [
+  { test_fn = "witness_plural_apostrophe_no_crash_case_single", note = "plural(\"'\") must not raise" },
+]
+
+# ---------------------------------------------------------------------------
+# Variant: a_not_incorrectly_abbreviated_924695c_1
+# ---------------------------------------------------------------------------
+[[tasks]]
+mutations = ["a_not_incorrectly_abbreviated_924695c_1"]
+
+[tasks.source]
+repo = "https://github.com/jaraco/inflect"
+commits = ["924695c2de9d1dcfde0c1bd4c4cb054e32fd8273"]
+commit_subjects = ["fix a/an issue 136 as indicated by tonywu7"]
+issues = [136]
+summary = "A_abbrev was a verbose regex with no `^` anchor: when invoked through re.search() the negative lookahead group could bind to any interior position, so words like 'BFM' (a consonant followed by [FHLMNRSX][A-Z]) were classified as 'an BFM' through an interior match. The fix prepends `^` so the lookahead binds only to the start of the word."
+
+[tasks.injection]
+kind = "patch"
+files = ["inflect/__init__.py"]
+locations = [{ file = "inflect/__init__.py", line = 1857, symbol = "A_abbrev" }]
+patch = "patches/a_not_incorrectly_abbreviated_924695c_1.patch"
+
+[tasks.bug]
+short_name = "a_not_incorrectly_abbreviated"
+invariant = "For an all-caps abbreviation whose first character is a consonant from SPECIAL_A's class (b,c,d,g,j,k,p,q,t,v,w,y,z), engine().a(word) starts with 'a ' (not 'an ')."
+how_triggered = "Reverse-applying the patch removes the leading `^` anchor in A_abbrev. re.search() can then locate `[FHLMNRSX][A-Z]` at an interior position; the consonant-leading abbreviation 'BFM' matches at offset 1 and is incorrectly classified as 'an BFM'."
+
+[[tasks.tasks]]
+property = "IndefArticleAbbrev"
+witnesses = [
+  { test_fn = "witness_indef_article_abbrev_case_bfm", note = "a('BFM') must be 'a BFM'" },
+]
+
+# ---------------------------------------------------------------------------
+# Variant: ordinal_accepts_numeric_27b2157_1
+# ---------------------------------------------------------------------------
+[[tasks]]
+mutations = ["ordinal_accepts_numeric_27b2157_1"]
+
+[tasks.source]
+repo = "https://github.com/jaraco/inflect"
+commits = ["27b2157907ae7f18feec5cf1b600a09e65e78420"]
+commit_subjects = ["Handle numeric inputs to ordinal without first casting to string. Fixes #178."]
+issues = [178]
+summary = "engine.ordinal() was annotated `num: Word` (an Annotated[str,...] alias). Once typeguard begain enforcing this annotation at call time, ordinal(1) — documented as accepting an int per the docstring — raised TypeCheckError. The fix widens the parameter to Union[Number, Word] (and adapts the body to coerce non-str via str(num))."
+
+[tasks.injection]
+kind = "patch"
+files = ["inflect/__init__.py"]
+locations = [{ file = "inflect/__init__.py", line = 3648, symbol = "engine.ordinal" }]
+patch = "patches/ordinal_accepts_numeric_27b2157_1.patch"
+
+[tasks.bug]
+short_name = "ordinal_accepts_numeric"
+invariant = "For any int n in [-9999, 9999], engine().ordinal(n) returns a string starting with str(n) and ending in one of {'st','nd','rd','th'}."
+how_triggered = "Reverse-applying the patch narrows `num: Union[Number, Word]` back to `num: Word`. typeguard's @typechecked decorator then rejects integer arguments and ordinal(1) raises TypeCheckError."
+
+[[tasks.tasks]]
+property = "OrdinalAcceptsNumeric"
+witnesses = [
+  { test_fn = "witness_ordinal_accepts_numeric_case_one", note = "ordinal(1) must succeed and start with '1'" },
+]
+
+# ---------------------------------------------------------------------------
+# Variant: shoes_is_plverb_oe_36269c1_1
+# ---------------------------------------------------------------------------
+[[tasks]]
+mutations = ["shoes_is_plverb_oe_36269c1_1"]
+
+[tasks.source]
+repo = "https://github.com/jaraco/inflect"
+commits = ["36269c1111add4c247d83389b874005fc3526994"]
+commit_subjects = ["Restore missing comma. Fixes #43."]
+issues = [43]
+summary = "`pl_v_oes_oe_endings_size5 = \"shoes\"` (no trailing comma) made the constant a bare string instead of a one-element tuple. Downstream code that iterates the tuple to invert a 'shoes' plural treats each character as a member, breaking the round-trip. plural('shoe') then returns 'sho'. The fix restores the trailing comma so the value is `(\"shoes\",)`."
+
+[tasks.injection]
+kind = "patch"
+files = ["inflect/__init__.py"]
+locations = [{ file = "inflect/__init__.py", line = 1825, symbol = "pl_v_oes_oe_endings_size5" }]
+patch = "patches/shoes_is_plverb_oe_36269c1_1.patch"
+
+[tasks.bug]
+short_name = "shoes_is_plverb_oe"
+invariant = "engine().plural('shoe') == 'shoes'."
+how_triggered = "Reverse-applying the patch turns `pl_v_oes_oe_endings_size5 = (\"shoes\",)` back into the bare string `\"shoes\"`. The tuple-iteration code in the singular/plural lookup then treats each character as a member, so the inverse-lookup fails for 'shoe' and plural('shoe') is computed as 'sho'."
+
+[[tasks.tasks]]
+property = "PluralShoeReturnsShoes"
+witnesses = [
+  { test_fn = "witness_plural_shoe_returns_shoes_case_zero", note = "plural('shoe') must equal 'shoes'" },
+]
+
+# ---------------------------------------------------------------------------
+# Variant: pound_force_pluralizes_pound_f87c0b9_1
+# ---------------------------------------------------------------------------
+[[tasks]]
+mutations = ["pound_force_pluralizes_pound_f87c0b9_1"]
+
+[tasks.source]
+repo = "https://github.com/jaraco/inflect"
+commits = ["f87c0b9e76ad97d564a8fd3a3b2e75e765e193f5"]
+commit_subjects = ["Fix plural of 'pound-force'"]
+origin = "internal"
+summary = "_pl_sb_postfix_adj_defn lacked a 'force' postfix-adjective entry. plural('pound-force') therefore fell through to the generic hyphenated-compound path and pluralized the wrong word, returning 'pound-forces' instead of 'pounds-force'. The fix adds ('force', enclose('pound')) so 'force' is recognized as a postfix adjective."
+
+[tasks.injection]
+kind = "patch"
+files = ["inflect/__init__.py"]
+locations = [{ file = "inflect/__init__.py", line = 1510, symbol = "_pl_sb_postfix_adj_defn" }]
+patch = "patches/pound_force_pluralizes_pound_f87c0b9_1.patch"
+
+[tasks.bug]
+short_name = "pound_force_pluralizes_pound"
+invariant = "engine().plural('pound-force') == 'pounds-force'."
+how_triggered = "Reverse-applying the patch removes the ('force', enclose('pound')) entry from _pl_sb_postfix_adj_defn. plural('pound-force') then falls through to the generic compound path and returns 'pound-forces'."
+
+[[tasks.tasks]]
+property = "PoundForcePluralizesPound"
+witnesses = [
+  { test_fn = "witness_pound_force_pluralizes_pound_case_zero", note = "plural('pound-force') must equal 'pounds-force'" },
+]
+
+# ---------------------------------------------------------------------------
+# Variant: louse_lice_plural_8d610f3_1
+# ---------------------------------------------------------------------------
+[[tasks]]
+mutations = ["louse_lice_plural_8d610f3_1"]
+
+[tasks.source]
+repo = "https://github.com/jaraco/inflect"
+commits = ["8d610f30f24bcdc524bcb8c734801fbb311eeeec"]
+commit_subjects = ["Update handling of louse/lice plurals to treat it as the exception rather than the norm."]
+origin = "internal"
+summary = "The original 'louse' branch in plural() pluralized every word ending in '..louse' to '..lice' wholesale (e.g. 'sealouse' → 'sealice'), even though only four canonical compounds (booklouse, grapelouse, louse, woodlouse) actually take that form. The fix gates the substitution on membership in pl_sb_U_louse_lice_bysize and falls back to the regular '+s' path otherwise."
+
+[tasks.injection]
+kind = "patch"
+files = ["inflect/__init__.py"]
+locations = [{ file = "inflect/__init__.py", line = 2833, symbol = "engine._plnoun_louse_branch" }]
+patch = "patches/louse_lice_plural_8d610f3_1.patch"
+
+[tasks.bug]
+short_name = "louse_lice_plural"
+invariant = "For any non-canonical louse compound (e.g. 'sealouse'), engine().plural(w) appends 's' rather than substituting 'louse' → 'lice'."
+how_triggered = "Reverse-applying the patch reverts the louse branch to the unguarded substitution `return f\"{word[:-5]}lice\"`. plural('sealouse') then returns 'sealice' instead of 'sealouses'."
+
+[[tasks.tasks]]
+property = "LouseLicePlural"
+witnesses = [
+  { test_fn = "witness_louse_lice_plural_case_zero", note = "plural('sealouse') must equal 'sealouses'" },
+]
+
+# ---------------------------------------------------------------------------
+# Dropped candidates
+# ---------------------------------------------------------------------------
+[[dropped]]
+commit = "31b9339"
+subject = "Don't crash on a suffix-only number_to_words"
+reason = "modern HEAD's _chunk_num('') no longer raises; both buggy and fixed paths return 'zero'."
+
+[[dropped]]
+commit = "76150f9"
+subject = "Replace enconium with encomium. Fixes #67."
+reason = "no observable public invariant on modern HEAD: singular_noun('encomia') returns False even on the fixed tree, so the bug isn't exposed via the engine API."
+
+[[dropped]]
+commit = "e2d02d2"
+subject = "Apply a minimal fix to allow the test cases to pass"
+reason = "no observable public invariant; this commit is a workaround scope-narrowing of an existing typeguard issue and not an independent bug."
+
+[[dropped]]
+commit = "8e2f1cf"
+subject = "_plequal: marginally reduce cyclomatic complexity (#223)"
+reason = "pure refactor, no behavior change."
+
+[[dropped]]
+commit = "0bf9533"
+subject = "engine: migrate from py3.14-removed `ast` classes"
+reason = "ast.Num/ast.Str still exist on py3.10-3.13 (even though deprecated), so reverting the migration on those Pythons is not observably broken."
+
+[[dropped]]
+commit = "c58609b"
+subject = "Construct the _gend_sing dictionary statically."
+reason = "pure refactor, no behavior change."

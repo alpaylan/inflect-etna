@@ -90,6 +90,9 @@ type = [
 ]
 
 
+[tool.setuptools.packages.find]
+include = ["inflect", "inflect.*"]
+
 [tool.setuptools_scm]
 
 
