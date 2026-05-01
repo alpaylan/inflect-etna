@@ -1,6 +1,7 @@
 name = "inflect"
 description = "Pure-Python English-language inflection (jaraco/inflect): plurals, ordinals, indefinite articles, number-to-word conversion. Bug fixes mined from upstream history; modern HEAD is the base, each patch reverse-applies a fix to install the original bug."
 language = "python"
+strategies = ["hypothesis", "crosshair"]
 crate = "inflect"
 base_commit = "262a247d2d99a47a520cdb2d46adb90df88b4326"
 
